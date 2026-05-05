@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { Element } from 'domhandler';
 import { ScrapedGoldData, ScrapedAvailabilityItem } from '../types/index.js';
 
 const PRICES_URL = 'https://cbu.uz/ru/banknotes-coins/gold-bars/prices/';
@@ -43,7 +44,7 @@ export async function scrapeGoldData(): Promise<{ data: ScrapedGoldData; isMockD
 // Grid builder — expands rowspan/colspan so every logical row has the same
 // number of columns regardless of how the HTML merges cells.
 // ---------------------------------------------------------------------------
-function buildGrid($: cheerio.CheerioAPI, table: cheerio.Element): string[][] {
+function buildGrid($: cheerio.CheerioAPI, table: Element): string[][] {
   const grid: string[][] = [];
   // pending[col] = { value, rowsLeft } — cells still occupied by an active rowspan
   const pending = new Map<number, { value: string; rowsLeft: number }>();

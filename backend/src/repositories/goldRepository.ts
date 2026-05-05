@@ -63,7 +63,7 @@ export function getAllPrices(): GoldPrice[] {
     SELECT weight_grams as weightGrams, price_uzs as priceUzs, updated_at as updatedAt
     FROM gold_prices
     ORDER BY weight_grams ASC
-  `).all() as GoldPrice[];
+  `).all() as unknown as GoldPrice[];
   return rows;
 }
 
@@ -74,7 +74,7 @@ export function getPriceHistory(weightGrams: number, days = 15): PriceHistoryEnt
     WHERE weight_grams = ?
     ORDER BY date DESC
     LIMIT ?
-  `).all([weightGrams, days]) as PriceHistoryEntry[];
+  `).all([weightGrams, days]) as unknown as PriceHistoryEntry[];
   return rows.reverse();
 }
 
