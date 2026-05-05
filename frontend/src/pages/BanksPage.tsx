@@ -13,7 +13,7 @@ import EmptyState from '../components/EmptyState.js';
 
 export default function BanksPage() {
   const [selectedWeight, setSelectedWeight] = useState(5);
-  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedCity, setSelectedCity] = useState('Ташкент');
   const [selectedBank, setSelectedBank] = useState<BankWithAvailability | null>(null);
 
   const { prices, loading: pricesLoading } = usePrices();
@@ -44,10 +44,6 @@ export default function BanksPage() {
         <section className="mb-stack-lg space-y-stack-md">
           <div className="flex items-center justify-between">
             <CitySelector cities={cities} selected={selectedCity} onChange={setSelectedCity} />
-            <button className="text-primary font-label-bold flex items-center gap-1">
-              <span className="material-symbols-outlined text-[20px]">filter_list</span>
-              Фильтры
-            </button>
           </div>
           <WeightChips selected={selectedWeight} onChange={setSelectedWeight} />
         </section>
@@ -70,7 +66,7 @@ export default function BanksPage() {
           ) : (
             banks.map(bank => (
               <BankCard
-                key={`${bank.bankName}-${bank.city}`}
+                key={bank.bankName}
                 bank={bank}
                 onViewBranches={setSelectedBank}
               />

@@ -8,24 +8,24 @@ import {
 } from '../types/index.js';
 
 export function upsertBank(name: string, shortName: string): number {
-  const existing = db.prepare('SELECT id FROM banks WHERE name = ?').get(name) as { id: number } | undefined;
+  const existing = db.prepare('SELECT id FROM banks WHERE name = ?').get(name) as { id: number } | null;
   if (existing) return existing.id;
-  const result = db.prepare('INSERT INTO banks (name, short_name) VALUES (?, ?)').run(name, shortName);
+  const result = db.prepare('INSERT INTO banks (name, short_name) VALUES (?, ?)').run([name, shortName]);
   return result.lastInsertRowid as number;
 }
 
 export function upsertBranch(bankId: number, city: string, address: string, phone: string): number {
   const existing = db.prepare(
     'SELECT id FROM branches WHERE bank_id = ? AND city = ? AND address = ?'
-  ).get(bankId, city, address) as { id: number } | undefined;
+  ).get([bankId, city, address]) as { id: number } | null;
 
   if (existing) {
-    db.prepare('UPDATE branches SET phone = ? WHERE id = ?').run(phone, existing.id);
+    db.prepare('UPDATE branches SET phone = ? WHERE id = ?').run([phone, existing.id]);
     return existing.id;
   }
   const result = db.prepare(
     'INSERT INTO branches (bank_id, city, address, phone) VALUES (?, ?, ?, ?)'
-  ).run(bankId, city, address, phone);
+  ).run([bankId, city, address, phone]);
   return result.lastInsertRowid as number;
 }
 
@@ -35,7 +35,7 @@ export function upsertGoldPrice(weightGrams: number, priceUzs: number): void {
     INSERT INTO gold_prices (weight_grams, price_uzs, updated_at)
     VALUES (?, ?, ?)
     ON CONFLICT(weight_grams) DO UPDATE SET price_uzs = excluded.price_uzs, updated_at = excluded.updated_at
-  `).run(weightGrams, priceUzs, now);
+  `).run([weightGrams, priceUzs, now]);
 }
 
 export function upsertAvailability(branchId: number, weightGrams: number, quantity: number, priceUzs: number): void {
@@ -47,7 +47,7 @@ export function upsertAvailability(branchId: number, weightGrams: number, quanti
       quantity = excluded.quantity,
       price_uzs = excluded.price_uzs,
       updated_at = excluded.updated_at
-  `).run(branchId, weightGrams, quantity, priceUzs, now);
+  `).run([branchId, weightGrams, quantity, priceUzs, now]);
 }
 
 export function recordPriceHistory(weightGrams: number, priceUzs: number, date: string): void {
@@ -55,7 +55,7 @@ export function recordPriceHistory(weightGrams: number, priceUzs: number, date: 
     INSERT INTO price_history (weight_grams, price_uzs, date)
     VALUES (?, ?, ?)
     ON CONFLICT(weight_grams, date) DO UPDATE SET price_uzs = excluded.price_uzs
-  `).run(weightGrams, priceUzs, date);
+  `).run([weightGrams, priceUzs, date]);
 }
 
 export function getAllPrices(): GoldPrice[] {
@@ -74,13 +74,17 @@ export function getPriceHistory(weightGrams: number, days = 15): PriceHistoryEnt
     WHERE weight_grams = ?
     ORDER BY date DESC
     LIMIT ?
-  `).all(weightGrams, days) as PriceHistoryEntry[];
+  `).all([weightGrams, days]) as PriceHistoryEntry[];
   return rows.reverse();
 }
 
 export function getAllCities(): string[] {
   const rows = db.prepare(`
-    SELECT DISTINCT city FROM branches ORDER BY city ASC
+    SELECT DISTINCT city FROM branches
+    WHERE city NOT LIKE '%гр%'
+      AND city NOT LIKE '%г.%'
+      AND length(city) > 3
+    ORDER BY city ASC
   `).all() as { city: string }[];
   return rows.map(r => r.city);
 }
@@ -109,7 +113,7 @@ export function getAvailabilityGrouped(city?: string, weightGrams?: number): Ban
   if (weightGrams) { query += ' AND ga.weight_grams = ?'; params.push(weightGrams); }
   query += ' ORDER BY b.name, br.city, br.id';
 
-  const rows = db.prepare(query).all(...params) as Array<{
+  const rows = db.prepare(query).all(params.length ? params : undefined) as Array<{
     bankName: string;
     bankShortName: string;
     city: string;
@@ -122,16 +126,15 @@ export function getAvailabilityGrouped(city?: string, weightGrams?: number): Ban
     updatedAt: string;
   }>;
 
-  // Group by bankName + city
+  // Group by bankName only (all cities under one card)
   const groupMap = new Map<string, BankWithAvailability>();
 
   for (const row of rows) {
-    const key = `${row.bankName}::${row.city}`;
+    const key = row.bankName;
     if (!groupMap.has(key)) {
       groupMap.set(key, {
         bankName: row.bankName,
         bankShortName: row.bankShortName,
-        city: row.city,
         totalQuantity: 0,
         hasAvailability: false,
         branches: [],
@@ -141,7 +144,7 @@ export function getAvailabilityGrouped(city?: string, weightGrams?: number): Ban
 
     let branch = group.branches.find(br => br.branchId === row.branchId);
     if (!branch) {
-      branch = { branchId: row.branchId, address: row.address, phone: row.phone, quantity: 0, available: false };
+      branch = { branchId: row.branchId, city: row.city, address: row.address, phone: row.phone, quantity: 0, available: false };
       group.branches.push(branch);
     }
     branch.quantity += row.quantity;
@@ -150,26 +153,23 @@ export function getAvailabilityGrouped(city?: string, weightGrams?: number): Ban
     group.hasAvailability = group.hasAvailability || row.quantity > 0;
   }
 
-  const result = Array.from(groupMap.values());
-
-  // Sort: available first, then alphabetically
-  result.sort((a, b) => {
-    if (a.hasAvailability !== b.hasAvailability) return a.hasAvailability ? -1 : 1;
-    return a.bankName.localeCompare(b.bankName, 'ru');
-  });
+  const result = Array.from(groupMap.values())
+    .filter(b => b.hasAvailability)
+    .sort((a, b) => a.bankName.localeCompare(b.bankName, 'ru'));
 
   return result;
 }
 
 export function getAvailabilityUpdatedAt(): string {
-  const row = db.prepare('SELECT MAX(updated_at) as ts FROM gold_availability').get() as { ts: string | null };
+  const row = db.prepare('SELECT MAX(updated_at) as ts FROM gold_availability').get() as { ts: string | null } | null;
   return row?.ts ?? new Date().toISOString();
 }
 
 export function persistScrapedData(data: ScrapedGoldData): void {
   const today = new Date().toISOString().split('T')[0];
 
-  const transaction = db.transaction(() => {
+  db.exec('BEGIN');
+  try {
     for (const price of data.prices) {
       upsertGoldPrice(price.weightGrams, price.priceUzs);
       recordPriceHistory(price.weightGrams, price.priceUzs, today);
@@ -180,9 +180,11 @@ export function persistScrapedData(data: ScrapedGoldData): void {
       const branchId = upsertBranch(bankId, item.city, item.address, item.phone);
       upsertAvailability(branchId, item.weightGrams, item.quantity, item.priceUzs);
     }
-  });
-
-  transaction();
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
 }
 
 export function hasPriceHistory(weightGrams: number): boolean {

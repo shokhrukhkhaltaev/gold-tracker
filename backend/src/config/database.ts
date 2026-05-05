@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { Database } from 'node-sqlite3-wasm';
 import path from 'path';
 import fs from 'fs';
 
@@ -10,8 +10,8 @@ if (!fs.existsSync(DATA_DIR)) {
 
 const db = new Database(path.join(DATA_DIR, 'gold.db'));
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+db.exec('PRAGMA busy_timeout = 5000');
+db.exec('PRAGMA foreign_keys = ON');
 
 export function initDatabase(): void {
   db.exec(`

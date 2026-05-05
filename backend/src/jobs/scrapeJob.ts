@@ -1,8 +1,8 @@
 import cron from 'node-cron';
 import { refreshData } from '../services/goldService.js';
 
-// Run at 09:00 Uzbekistan time (UTC+5 = 04:00 UTC) every day
-const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 4 * * *';
+// 09:00 and 17:00 Tashkent time (UTC+5), every day
+const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 4,12 * * *';
 
 export function startScrapeJob(): void {
   cron.schedule(CRON_SCHEDULE, async () => {

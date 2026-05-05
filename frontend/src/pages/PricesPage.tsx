@@ -10,8 +10,6 @@ function formatPrice(n: number): string {
 }
 
 const WEIGHT_LABELS: Record<number, string> = {
-  1: '1г',
-  2: '2г',
   5: '5г',
   10: '10г',
   20: '20г',
@@ -35,7 +33,7 @@ function GoldCard({ price, onCheckAvailability, colSpan }: GoldCardProps) {
           </div>
           <div className="text-right">
             <p className={colSpan ? 'text-headline-lg font-bold' : 'text-headline-md font-bold'}>
-              {formatPrice(price.priceUzs)}
+              {formatPrice(price.priceUzs)} <span className="text-label-sm font-semibold text-secondary">сум</span>
             </p>
             <span className="text-label-sm text-emerald-600 flex items-center justify-end gap-0.5">
               <span className="material-symbols-outlined text-[14px]">trending_up</span>

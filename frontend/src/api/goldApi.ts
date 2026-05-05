@@ -1,6 +1,6 @@
 import { ApiResponse, BankWithAvailability, GoldPrice, PriceHistoryEntry } from '../types/index.js';
 
-const BASE_URL = '/api';
+const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 async function apiFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`);

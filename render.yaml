@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: gold-tracker-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: CORS_ORIGIN
+        sync: false   # вставишь URL фронта вручную после деплоя Vercel

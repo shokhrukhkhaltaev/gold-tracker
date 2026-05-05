@@ -12,6 +12,7 @@ export interface PriceHistoryEntry {
 
 export interface BranchAvailability {
   branchId: number;
+  city: string;
   address: string;
   phone: string;
   quantity: number;
@@ -21,7 +22,6 @@ export interface BranchAvailability {
 export interface BankWithAvailability {
   bankName: string;
   bankShortName: string;
-  city: string;
   totalQuantity: number;
   hasAvailability: boolean;
   branches: BranchAvailability[];

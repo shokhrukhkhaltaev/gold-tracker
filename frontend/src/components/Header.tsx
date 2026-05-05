@@ -29,9 +29,6 @@ export default function Header({ prices, loading }: HeaderProps) {
           )}
         </h1>
       </div>
-      <div className="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant">
-        <span className="material-symbols-outlined text-secondary text-[20px]">person</span>
-      </div>
     </header>
   );
 }
