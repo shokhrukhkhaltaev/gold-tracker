@@ -10,5 +10,6 @@ router.get('/banks', goldController.getBanks);
 router.get('/status', goldController.getStatus);
 router.post('/refresh', goldController.triggerRefresh);
 router.post('/telegram/test', goldController.sendTelegramTest);
+router.post('/telegram/webhook', goldController.telegramWebhook);
 
 export default router;

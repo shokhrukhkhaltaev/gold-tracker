@@ -4,6 +4,7 @@ import { initDatabase } from './config/database.js';
 import { refreshData } from './services/goldService.js';
 import { startScrapeJob } from './jobs/scrapeJob.js';
 import { startTelegramJob } from './jobs/telegramJob.js';
+import { registerWebhook } from './services/telegramService.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -16,6 +17,9 @@ async function main() {
 
   startScrapeJob();
   startTelegramJob();
+
+  const baseUrl = process.env.RENDER_EXTERNAL_URL ?? `https://gold-tracker-d0bv.onrender.com`;
+  registerWebhook(baseUrl).catch(err => console.error('[Server] Webhook registration failed:', err));
 
   app.listen(PORT, () => {
     console.log(`[Server] Running on http://localhost:${PORT}`);

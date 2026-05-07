@@ -1,12 +1,12 @@
 import cron from 'node-cron';
-import { sendDailyNotification } from '../services/telegramService.js';
+import { sendDailyPrices } from '../services/telegramService.js';
 
 // Every day at 11:00 Tashkent time
 export function startTelegramJob(): void {
   cron.schedule('0 11 * * *', async () => {
     console.log('[TelegramJob] Sending daily notification...');
     try {
-      await sendDailyNotification();
+      await sendDailyPrices();
     } catch (err) {
       console.error('[TelegramJob] Failed to send notification:', err);
     }

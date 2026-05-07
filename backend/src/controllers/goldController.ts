@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as goldService from '../services/goldService.js';
-import { sendDailyNotification } from '../services/telegramService.js';
+import { sendDailyPrices, handleUpdate, registerWebhook } from '../services/telegramService.js';
 
 export async function getPrices(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -80,8 +80,17 @@ export async function triggerRefresh(req: Request, res: Response, next: NextFunc
 
 export async function sendTelegramTest(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    await sendDailyNotification();
-    res.json({ message: 'Telegram notification sent' });
+    await sendDailyPrices();
+    res.json({ message: 'Telegram prices sent' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function telegramWebhook(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await handleUpdate(req.body);
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
