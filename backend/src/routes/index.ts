@@ -9,5 +9,6 @@ router.get('/cities', goldController.getCities);
 router.get('/banks', goldController.getBanks);
 router.get('/status', goldController.getStatus);
 router.post('/refresh', goldController.triggerRefresh);
+router.post('/telegram/test', goldController.sendTelegramTest);
 
 export default router;

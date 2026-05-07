@@ -3,6 +3,7 @@ import app from './app.js';
 import { initDatabase } from './config/database.js';
 import { refreshData } from './services/goldService.js';
 import { startScrapeJob } from './jobs/scrapeJob.js';
+import { startTelegramJob } from './jobs/telegramJob.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -14,6 +15,7 @@ async function main() {
   await refreshData();
 
   startScrapeJob();
+  startTelegramJob();
 
   app.listen(PORT, () => {
     console.log(`[Server] Running on http://localhost:${PORT}`);

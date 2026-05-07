@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as goldService from '../services/goldService.js';
+import { sendDailyNotification } from '../services/telegramService.js';
 
 export async function getPrices(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -72,6 +73,15 @@ export async function triggerRefresh(req: Request, res: Response, next: NextFunc
   try {
     await goldService.refreshData();
     res.json({ message: 'Data refreshed successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function sendTelegramTest(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await sendDailyNotification();
+    res.json({ message: 'Telegram notification sent' });
   } catch (err) {
     next(err);
   }
