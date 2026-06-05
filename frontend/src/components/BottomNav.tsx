@@ -1,8 +1,8 @@
 import { NavLink } from 'react-router-dom';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Цены', icon: 'show_chart', exact: true },
-  { to: '/banks', label: 'Банки', icon: 'account_balance', exact: false },
+  { to: '/', label: 'Банки', icon: 'account_balance', exact: true },
+  { to: '/prices', label: 'Цены', icon: 'show_chart', exact: false },
 ];
 
 export default function BottomNav() {

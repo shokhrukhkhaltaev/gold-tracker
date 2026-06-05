@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useBanks, useCities } from '../hooks/useGoldData.js';
-import { usePrices } from '../hooks/useGoldData.js';
-import { BankWithAvailability } from '../types/index.js';
+import { useLocation } from 'react-router-dom';
+import { useBanks, useCities, usePrices, usePriceHistory } from '../hooks/useGoldData.js';
+import { BankWithAvailability, PriceHistoryEntry } from '../types/index.js';
 import Header from '../components/Header.js';
 import PriceHero from '../components/PriceHero.js';
 import WeightChips from '../components/WeightChips.js';
@@ -11,17 +11,40 @@ import BranchModal from '../components/BranchModal.js';
 import { BankCardSkeleton } from '../components/LoadingSkeleton.js';
 import EmptyState from '../components/EmptyState.js';
 
+const CITY_KEY = 'goldi_selected_city';
+
+function calcChange(history: PriceHistoryEntry[]): number | null {
+  if (history.length < 2) return null;
+  const first = history[0].priceUzs;
+  const last = history[history.length - 1].priceUzs;
+  return ((last - first) / first) * 100;
+}
+
 export default function BanksPage() {
-  const [selectedWeight, setSelectedWeight] = useState(5);
-  const [selectedCity, setSelectedCity] = useState('Ташкент');
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const initialWeight = parseInt(params.get('weight') ?? '5', 10);
+
+  const [selectedWeight, setSelectedWeight] = useState(initialWeight);
+  const [selectedCity, setSelectedCity] = useState(
+    () => localStorage.getItem(CITY_KEY) ?? 'Ташкент',
+  );
   const [selectedBank, setSelectedBank] = useState<BankWithAvailability | null>(null);
+
+  function handleCityChange(city: string) {
+    localStorage.setItem(CITY_KEY, city);
+    setSelectedCity(city);
+  }
 
   const { prices, loading: pricesLoading } = usePrices();
   const { cities } = useCities();
+  const { history } = usePriceHistory(selectedWeight);
   const { banks, loading: banksLoading, isMockData, updatedAt } = useBanks(
     selectedCity || undefined,
     selectedWeight,
   );
+
+  const changePercent = calcChange(history);
 
   const formattedUpdate = updatedAt
     ? new Intl.RelativeTimeFormat('ru', { numeric: 'auto' }).format(
@@ -34,21 +57,21 @@ export default function BanksPage() {
     <>
       <Header prices={prices} loading={pricesLoading} />
 
-      <main className="pt-[72px] pb-[100px] px-container-margin max-w-2xl mx-auto">
-        {/* Price Hero */}
+      <main className="pt-[72px] pb-[100px] px-container-margin max-w-2xl mx-auto animate-fade-in">
         <section className="mt-stack-lg mb-stack-lg">
-          <PriceHero prices={prices} selectedWeight={selectedWeight} loading={pricesLoading} />
+          <PriceHero
+            prices={prices}
+            selectedWeight={selectedWeight}
+            loading={pricesLoading}
+            changePercent={changePercent}
+          />
         </section>
 
-        {/* Filters */}
         <section className="mb-stack-lg space-y-stack-md">
-          <div className="flex items-center justify-between">
-            <CitySelector cities={cities} selected={selectedCity} onChange={setSelectedCity} />
-          </div>
+          <CitySelector cities={cities} selected={selectedCity} onChange={handleCityChange} />
           <WeightChips selected={selectedWeight} onChange={setSelectedWeight} />
         </section>
 
-        {/* Banks list */}
         <section className="space-y-stack-md">
           <h3 className="text-headline-md text-on-background mb-4">Наличие в банках</h3>
 
@@ -64,17 +87,17 @@ export default function BanksPage() {
               icon="account_balance"
             />
           ) : (
-            banks.map(bank => (
+            [...banks].sort((a, b) => b.totalQuantity - a.totalQuantity).map((bank, i) => (
               <BankCard
                 key={bank.bankName}
                 bank={bank}
                 onViewBranches={setSelectedBank}
+                index={i}
               />
             ))
           )}
         </section>
 
-        {/* Info card */}
         {!banksLoading && (
           <div className="mt-stack-lg p-gutter bg-surface-container-low rounded-xl border-l-4 border-primary">
             <div className="flex gap-3">

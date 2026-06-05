@@ -8,8 +8,8 @@ export default function App() {
     <BrowserRouter>
       <div className="bg-background text-on-background min-h-screen">
         <Routes>
-          <Route path="/" element={<PricesPage />} />
-          <Route path="/banks" element={<BanksPage />} />
+          <Route path="/" element={<BanksPage />} />
+          <Route path="/prices" element={<PricesPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <BottomNav />
