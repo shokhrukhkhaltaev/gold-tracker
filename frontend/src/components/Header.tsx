@@ -19,16 +19,23 @@ export default function Header({ prices, loading }: HeaderProps) {
         <span className="material-symbols-outlined text-yellow-500" style={{ fontVariationSettings: "'FILL' 1" }}>
           payments
         </span>
-        <h1 className="font-bold text-lg text-yellow-600">
-          {loading ? (
-            <span className="block w-36 h-5 bg-surface-container-high rounded animate-pulse" />
-          ) : pricePerGram > 0 ? (
-            `1г: ${formatPrice(pricePerGram)} сум`
-          ) : (
-            'Золото Узбекистана'
-          )}
-        </h1>
+        <h1 className="font-bold text-lg text-on-surface">Золото Узбекистана</h1>
       </div>
+      {loading ? (
+        <span className="w-32 h-6 bg-surface-container-high rounded-full animate-pulse block" />
+      ) : pricePerGram > 0 ? (
+        <div
+          className="flex items-center gap-1.5 bg-primary-fixed px-3 py-1 rounded-full select-none pointer-events-none cursor-default"
+          aria-label={`Цена за 1 грамм: ${formatPrice(pricePerGram)} сум`}
+        >
+          <span className="material-symbols-outlined text-on-primary-fixed-variant" style={{ fontSize: '14px' }}>
+            monitoring
+          </span>
+          <span className="text-label-sm font-semibold text-on-primary-fixed-variant">
+            1г · {formatPrice(pricePerGram)} сум
+          </span>
+        </div>
+      ) : null}
     </header>
   );
 }
