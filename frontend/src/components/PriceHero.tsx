@@ -55,7 +55,15 @@ export default function PriceHero({ prices, selectedWeight, loading, changePerce
         )}
       </div>
       <div className="mt-3 pt-2.5 border-t border-white/25">
-        <span className="text-white/70 text-[11px] font-medium">Источник: Центральный банк Узбекистана (cbu.uz)</span>
+        <span className="text-white/70 text-[11px] font-medium">Курс Центрального Банка Узбекистана · </span>
+        <a
+          href="https://cbu.uz/ru/banknotes-coins/gold-bars/prices/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/70 text-[11px] font-medium underline underline-offset-2"
+        >
+          cbu.uz/gold-bars
+        </a>
       </div>
     </div>
   );
