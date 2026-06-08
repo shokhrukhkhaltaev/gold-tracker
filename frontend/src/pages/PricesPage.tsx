@@ -64,11 +64,11 @@ export default function PricesPage() {
   const { prices, loading: pricesLoading } = usePrices();
   const { history, loading: historyLoading } = usePriceHistory(selectedWeight);
 
-  // Build a fixed 7-day window ending today; days without scraped data become null
-  const todayUtc = new Date();
+  // Fixed 7-day window starting from the first data date; future days are null until cron fills them
+  const anchorDate = history.length > 0 ? history[0].date : new Date().toISOString().split('T')[0];
   const chartData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(todayUtc);
-    d.setDate(d.getDate() - (6 - i));
+    const d = new Date(anchorDate + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + i);
     const date = d.toISOString().split('T')[0];
     const entry = history.find(h => h.date === date);
     return { date, priceUzs: entry ? Math.round(entry.priceUzs / selectedWeight) : null };
