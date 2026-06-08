@@ -18,7 +18,9 @@ async function main() {
   startScrapeJob();
   startTelegramJob();
 
-  const baseUrl = process.env.RENDER_EXTERNAL_URL ?? `https://gold-tracker-d0bv.onrender.com`;
+  const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+    : process.env.RENDER_EXTERNAL_URL ?? `https://gold-tracker-d0bv.onrender.com`;
   registerWebhook(baseUrl).catch(err => console.error('[Server] Webhook registration failed:', err));
 
   app.listen(PORT, () => {
