@@ -7,7 +7,6 @@ interface PriceChartProps {
   history: ChartEntry[];
   loading: boolean;
   hideTitle?: boolean;
-  perGramDivisor?: number;
 }
 
 function formatPrice(n: number): string {
@@ -25,7 +24,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
-export default function PriceChart({ history, loading, hideTitle, perGramDivisor }: PriceChartProps) {
+export default function PriceChart({ history, loading, hideTitle }: PriceChartProps) {
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-card p-6 gold-mesh overflow-hidden">

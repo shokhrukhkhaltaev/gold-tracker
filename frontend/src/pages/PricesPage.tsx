@@ -114,7 +114,7 @@ export default function PricesPage() {
 
           <WeightChips selected={selectedWeight} onChange={setSelectedWeight} />
 
-          <PriceChart history={chartData} loading={historyLoading} hideTitle perGramDivisor={selectedWeight} />
+          <PriceChart history={chartData} loading={historyLoading} hideTitle />
         </section>
 
         <section className="space-y-stack-md">
