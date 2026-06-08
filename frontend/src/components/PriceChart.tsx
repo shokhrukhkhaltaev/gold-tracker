@@ -56,6 +56,7 @@ export default function PriceChart({ history, loading, hideTitle, perGramDivisor
     return `${pct}%`;
   };
 
+  const lastActiveIndex = history.reduce((acc, h, i) => (h.priceUzs !== null ? i : acc), -1);
   const isPositive = activePrices.length > 1
     ? activePrices[activePrices.length - 1] >= activePrices[0]
     : true;
@@ -112,6 +113,8 @@ export default function PriceChart({ history, loading, hideTitle, perGramDivisor
         <div className="flex items-end gap-2 h-36">
           {history.map((entry, i) => {
             const isDisabled = entry.priceUzs === null;
+            const isLast = i === lastActiveIndex;
+            const isPeak = !isDisabled && entry.priceUzs === maxPrice && activePrices.length > 1;
 
             return (
               <div key={i} className="group relative flex-1 flex flex-col items-center justify-end h-full">
@@ -133,7 +136,9 @@ export default function PriceChart({ history, loading, hideTitle, perGramDivisor
                   />
                 ) : (
                   <div
-                    className="w-full rounded-t-sm bg-blue-800 transition-all duration-300 cursor-pointer hover:opacity-80"
+                    className={`w-full rounded-t-sm transition-all duration-300 cursor-pointer hover:opacity-80 ${
+                      isPeak ? 'bg-blue-400' : isLast ? 'bg-blue-600' : 'bg-blue-800'
+                    }`}
                     style={{ height: getBarHeight(entry.priceUzs!) }}
                   />
                 )}
