@@ -106,22 +106,22 @@ function BranchItem({ branch }: { branch: BranchAvailability }) {
           <div className="min-w-0">
             <p className="text-label-bold text-on-surface leading-snug">{branch.address || 'Адрес не указан'}</p>
             <p className="text-label-sm text-secondary mt-0.5">{branch.city}</p>
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <span className="bg-emerald-100 text-emerald-700 text-[14px] font-black px-2.5 py-0.5 rounded-full">
-                {branch.quantity} шт.
-              </span>
-              <span className="text-[11px] text-emerald-600 font-medium">в наличии</span>
-            </div>
+            <p className="text-[11px] text-emerald-600 font-medium mt-1.5">в наличии</p>
           </div>
         </div>
 
-        <a
-          href={`tel:${phone}`}
-          className="shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
-          title={`Позвонить: ${phone}`}
-        >
-          <span className="material-symbols-outlined text-white text-[20px]">call</span>
-        </a>
+        <div className="shrink-0 flex flex-col items-center gap-2">
+          <span className="text-[22px] font-black text-emerald-700 leading-none">
+            {branch.quantity} <span className="text-[13px] font-semibold text-emerald-500">шт.</span>
+          </span>
+          <a
+            href={`tel:${phone}`}
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
+            title={`Позвонить: ${phone}`}
+          >
+            <span className="material-symbols-outlined text-white text-[20px]">call</span>
+          </a>
+        </div>
       </div>
     </div>
   );
