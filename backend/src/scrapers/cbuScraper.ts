@@ -15,28 +15,34 @@ const HTTP_HEADERS = {
 
 const WEIGHT_COLUMNS = [5, 10, 20, 50, 100];
 
-export async function scrapeGoldData(): Promise<{ data: ScrapedGoldData; isMockData: boolean }> {
+export async function scrapeGoldData(): Promise<{ data: ScrapedGoldData; isMockData: boolean; error?: string }> {
   try {
-    const [pricesHtml, balanceHtml] = await Promise.all([
-      axios.get(PRICES_URL, { timeout: 20000, headers: HTTP_HEADERS }).then(r => r.data as string),
-      axios.get(BALANCE_URL, { timeout: 20000, headers: HTTP_HEADERS }).then(r => r.data as string),
+    const [pricesRes, balanceRes] = await Promise.all([
+      axios.get(PRICES_URL, { timeout: 20000, headers: HTTP_HEADERS }),
+      axios.get(BALANCE_URL, { timeout: 20000, headers: HTTP_HEADERS }),
     ]);
 
-    const prices = parsePricesPage(pricesHtml);
+    console.log(`[Scraper] Prices page: status=${pricesRes.status}, size=${String(pricesRes.data).length}`);
+    console.log(`[Scraper] Balance page: status=${balanceRes.status}, size=${String(balanceRes.data).length}`);
+
+    const prices = parsePricesPage(pricesRes.data as string);
+    console.log(`[Scraper] Prices parsed: ${prices.length}`);
+
     const priceMap = new Map(prices.map(p => [p.weightGrams, p.priceUzs]));
-    const availability = parseBalancePage(balanceHtml, priceMap);
+    const availability = parseBalancePage(balanceRes.data as string, priceMap);
+    console.log(`[Scraper] Availability parsed: ${availability.length}`);
 
     if (availability.length > 0) {
-      console.log(`[Scraper] Parsed ${availability.length} branch-weight entries, ${prices.length} price rows`);
       return { data: { prices, availability }, isMockData: false };
     }
 
-    console.warn('[Scraper] Parsed 0 entries — falling back to mock data');
-    return { data: getMockData(), isMockData: true };
+    const err = `Parsed 0 entries (prices=${prices.length}, balanceSize=${String(balanceRes.data).length})`;
+    console.warn(`[Scraper] ${err} — falling back to mock data`);
+    return { data: getMockData(), isMockData: true, error: err };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`[Scraper] Fetch error: ${msg}. Using mock data.`);
-    return { data: getMockData(), isMockData: true };
+    return { data: getMockData(), isMockData: true, error: msg };
   }
 }
 

@@ -4,11 +4,13 @@ import { GoldPrice, PriceHistoryEntry, BankWithAvailability } from '../types/ind
 
 let lastScrapeTime: Date | null = null;
 let isMockData = false;
+let lastScrapeError: string | null = null;
 
 export async function refreshData(): Promise<void> {
   console.log('[GoldService] Starting data refresh...');
-  const { data, isMockData: mock } = await scrapeGoldData();
+  const { data, isMockData: mock, error } = await scrapeGoldData();
   isMockData = mock;
+  lastScrapeError = error ?? null;
 
   repo.persistScrapedData(data);
 
@@ -47,9 +49,10 @@ export function getBanksWithAvailability(city?: string, weightGrams?: number): {
   return { banks, updatedAt, isMockData };
 }
 
-export function getStatus(): { lastScrape: string | null; isMockData: boolean } {
+export function getStatus(): { lastScrape: string | null; isMockData: boolean; lastError: string | null } {
   return {
     lastScrape: lastScrapeTime?.toISOString() ?? null,
     isMockData,
+    lastError: lastScrapeError,
   };
 }
