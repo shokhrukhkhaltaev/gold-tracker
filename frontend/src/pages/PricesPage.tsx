@@ -71,7 +71,7 @@ export default function PricesPage() {
     d.setUTCDate(d.getUTCDate() + i);
     const date = d.toISOString().split('T')[0];
     const entry = history.find(h => h.date === date);
-    return { date, priceUzs: entry ? Math.round(entry.priceUzs / selectedWeight) : null };
+    return { date, priceUzs: entry ? entry.priceUzs : null };
   });
 
   const activePrices = chartData.filter(d => d.priceUzs !== null).map(d => d.priceUzs as number);
@@ -114,7 +114,7 @@ export default function PricesPage() {
 
           <WeightChips selected={selectedWeight} onChange={setSelectedWeight} />
 
-          <PriceChart history={chartData} loading={historyLoading} hideTitle />
+          <PriceChart history={chartData} loading={historyLoading} hideTitle perGramDivisor={selectedWeight} />
         </section>
 
         <section className="space-y-stack-md">

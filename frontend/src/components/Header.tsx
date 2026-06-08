@@ -26,15 +26,10 @@ export default function Header({ prices, loading }: HeaderProps) {
         {loading ? (
           <span className="block w-36 h-7 bg-surface-container-high rounded-full animate-pulse" />
         ) : pricePerGram > 0 ? (
-          <div className="flex items-center gap-1.5 bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 rounded-full shadow-sm">
-            <span
-              className="material-symbols-outlined text-white text-[14px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              finance
-            </span>
-            <span className="text-white text-[13px] font-black tracking-wide">
-              1г · {formatPrice(pricePerGram)} сум
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-zinc-100">
+            <span className="text-zinc-500 text-[11px] font-medium">1г</span>
+            <span className="text-zinc-800 text-[13px] font-bold">
+              {formatPrice(pricePerGram)} сум
             </span>
           </div>
         ) : null}

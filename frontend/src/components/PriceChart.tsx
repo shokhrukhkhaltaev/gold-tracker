@@ -7,6 +7,7 @@ interface PriceChartProps {
   history: ChartEntry[];
   loading: boolean;
   hideTitle?: boolean;
+  perGramDivisor?: number;
 }
 
 function formatPrice(n: number): string {
@@ -24,13 +25,18 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
-export default function PriceChart({ history, loading, hideTitle }: PriceChartProps) {
+export default function PriceChart({ history, loading, hideTitle, perGramDivisor }: PriceChartProps) {
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-card p-6 gold-mesh overflow-hidden">
-        <div className="flex items-end justify-between gap-2 h-48 animate-pulse">
+        <div className="flex gap-2 mb-3">
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="flex-1 bg-surface-container rounded-t-sm" style={{ height: `${30 + i * 8}%` }} />
+            <div key={i} className="flex-1 h-4 bg-surface-container rounded animate-pulse" />
+          ))}
+        </div>
+        <div className="flex items-end gap-2 h-36 animate-pulse">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="flex-1 bg-surface-container rounded-t-sm" style={{ height: `${30 + i * 7}%` }} />
           ))}
         </div>
       </div>
@@ -46,7 +52,7 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
   const range = maxPrice - minPrice || 1;
 
   const getBarHeight = (price: number) => {
-    const pct = ((price - minPrice) / range) * 50 + 25; // 25%–75%, leaves ~25% gap for label
+    const pct = ((price - minPrice) / range) * 55 + 25; // 25%–80%
     return `${pct}%`;
   };
 
@@ -83,7 +89,28 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
       )}
 
       <div className="bg-white rounded-xl shadow-card p-6 gold-mesh overflow-hidden">
-        <div className="flex items-end justify-between gap-2 h-48">
+        {/* Price labels row — one per bar column */}
+        <div className="flex gap-2 mb-3">
+          {history.map((entry, i) => {
+            const labelPrice = entry.priceUzs !== null && perGramDivisor
+              ? Math.round(entry.priceUzs / perGramDivisor)
+              : entry.priceUzs;
+            return (
+              <div key={i} className="flex-1 text-center">
+                {labelPrice !== null ? (
+                  <span className="text-[11px] font-bold text-on-surface leading-none block">
+                    {formatBarLabel(labelPrice)}
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-zinc-200 leading-none block">—</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bars */}
+        <div className="flex items-end gap-2 h-36">
           {history.map((entry, i) => {
             const isDisabled = entry.priceUzs === null;
             const isLast = i === lastActiveIndex;
@@ -91,13 +118,6 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
 
             return (
               <div key={i} className="group relative flex-1 flex flex-col items-center justify-end h-full">
-                {/* Price label at top of column */}
-                <span className={`absolute top-0 text-[8px] font-semibold leading-none pointer-events-none select-none ${
-                  isDisabled ? 'text-zinc-300' : 'text-secondary'
-                }`}>
-                  {isDisabled ? '—' : formatBarLabel(entry.priceUzs!)}
-                </span>
-
                 {!isDisabled && (
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
                     <div className="bg-inverse-surface text-inverse-on-surface text-[10px] font-semibold rounded px-2 py-1 whitespace-nowrap shadow-lg">
@@ -127,6 +147,7 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
           })}
         </div>
 
+        {/* Date labels */}
         <div className="flex justify-between mt-2">
           <span className="text-[10px] text-secondary">{formatDate(history[0].date)}</span>
           {history.length > 4 && (
