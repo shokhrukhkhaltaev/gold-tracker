@@ -106,10 +106,11 @@ function BranchItem({ branch }: { branch: BranchAvailability }) {
           <div className="min-w-0">
             <p className="text-label-bold text-on-surface leading-snug">{branch.address || 'Адрес не указан'}</p>
             <p className="text-label-sm text-secondary mt-0.5">{branch.city}</p>
-            <div className="flex items-center gap-1 mt-1.5">
-              <span className="bg-emerald-100 text-emerald-700 text-[11px] font-black px-2 py-0.5 rounded-full">
-                {branch.quantity} шт. в наличии
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="bg-emerald-100 text-emerald-700 text-[14px] font-black px-2.5 py-0.5 rounded-full">
+                {branch.quantity} шт.
               </span>
+              <span className="text-[11px] text-emerald-600 font-medium">в наличии</span>
             </div>
           </div>
         </div>
