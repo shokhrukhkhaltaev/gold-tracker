@@ -16,12 +16,11 @@ export default function PriceHero({ prices, selectedWeight, loading, changePerce
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl p-5 flex justify-between items-end shadow-md">
+      <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-card">
         <div className="space-y-2">
-          <div className="w-32 h-3 bg-white/30 rounded animate-pulse" />
-          <div className="w-48 h-8 bg-white/30 rounded animate-pulse" />
+          <div className="w-32 h-3 bg-zinc-100 rounded animate-pulse" />
+          <div className="w-48 h-8 bg-zinc-100 rounded animate-pulse" />
         </div>
-        <div className="w-16 h-7 bg-white/30 rounded-full animate-pulse" />
       </div>
     );
   }
@@ -34,33 +33,32 @@ export default function PriceHero({ prices, selectedWeight, loading, changePerce
     : `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
 
   return (
-    <div className="bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl p-5 shadow-md">
-      <div className="flex justify-between items-end">
+    <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-card">
+      <div className="flex justify-between items-start">
         <div>
-          <span className="text-[12px] text-white/80 uppercase tracking-widest font-semibold">
+          <span className="text-[11px] text-zinc-400 uppercase tracking-widest font-semibold">
             Цена за {selected.weightGrams}г золота
           </span>
-          <h2 className="text-[28px] font-black text-white mt-1 leading-tight">
+          <h2 className="text-[30px] font-black text-zinc-900 mt-1 leading-tight">
             {formatPrice(selected.priceUzs)}
-            <span className="text-[16px] font-semibold text-white/80 ml-1.5">сум</span>
+            <span className="text-[15px] font-semibold text-zinc-400 ml-1.5">сум</span>
           </h2>
         </div>
         {changeLabel && (
-          <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full mb-0.5">
-            <span className="material-symbols-outlined text-white text-[16px]">
-              {isPositive ? 'trending_up' : 'trending_down'}
-            </span>
-            <span className="text-white text-[13px] font-bold">{changeLabel}</span>
+          <div className={`px-3 py-1.5 rounded-full text-[13px] font-bold mt-1 ${
+            isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+          }`}>
+            {changeLabel}
           </div>
         )}
       </div>
-      <div className="mt-3 pt-2.5 border-t border-white/25">
-        <span className="text-white/70 text-[11px] font-medium">Курс Центрального Банка Узбекистана · </span>
+      <div className="mt-3 pt-2.5 border-t border-zinc-100">
+        <span className="text-zinc-400 text-[11px]">Курс Центрального Банка Узбекистана · </span>
         <a
           href="https://cbu.uz/ru/banknotes-coins/gold-bars/prices/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-white/70 text-[11px] font-medium underline underline-offset-2"
+          className="text-zinc-400 text-[11px] underline underline-offset-2 hover:text-zinc-600"
         >
           cbu.uz/gold-bars
         </a>
