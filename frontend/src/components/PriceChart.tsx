@@ -13,6 +13,12 @@ function formatPrice(n: number): string {
   return n.toLocaleString('ru-RU');
 }
 
+function formatBarLabel(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'М';
+  if (n >= 1_000) return Math.round(n / 1_000).toLocaleString('ru-RU') + 'к';
+  return n.toLocaleString('ru-RU');
+}
+
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
@@ -40,7 +46,7 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
   const range = maxPrice - minPrice || 1;
 
   const getBarHeight = (price: number) => {
-    const pct = ((price - minPrice) / range) * 60 + 30;
+    const pct = ((price - minPrice) / range) * 50 + 25; // 25%–75%, leaves ~25% gap for label
     return `${pct}%`;
   };
 
@@ -85,6 +91,13 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
 
             return (
               <div key={i} className="group relative flex-1 flex flex-col items-center justify-end h-full">
+                {/* Price label at top of column */}
+                <span className={`absolute top-0 text-[8px] font-semibold leading-none pointer-events-none select-none ${
+                  isDisabled ? 'text-zinc-300' : 'text-secondary'
+                }`}>
+                  {isDisabled ? '—' : formatBarLabel(entry.priceUzs!)}
+                </span>
+
                 {!isDisabled && (
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
                     <div className="bg-inverse-surface text-inverse-on-surface text-[10px] font-semibold rounded px-2 py-1 whitespace-nowrap shadow-lg">
