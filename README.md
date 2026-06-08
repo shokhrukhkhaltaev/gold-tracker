@@ -187,14 +187,20 @@ Base URL: `http://localhost:3001/api`
 
 ## Deployment
 
-### Railway / Render
+### Railway (Backend) + Vercel (Frontend)
+
+**Текущий деплой:**
+- Backend: `https://gold-tracker-backend-production.up.railway.app`
+- Frontend: `https://frontend-flame-theta-76.vercel.app`
 
 1. Push to GitHub
-2. Connect repo to Railway or Render
-3. Deploy backend as a Node.js service with `npm install && npm run build && npm start`
-4. Set env vars from `.env.example`
-5. Deploy frontend as a static site with `npm run build` → output dir `dist`
-   - Set `VITE_API_URL` env var if backend is on a different domain and update `vite.config.ts` proxy accordingly
+2. Подключить репо к Railway, деплоить `backend/` как Node.js сервис
+   - Build: `npm install --include=dev && npm run build`
+   - Start: `node dist/index.js`
+   - Envs: PORT, NODE_ENV, CORS_ORIGIN, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+3. Подключить репо к Vercel, деплоить `frontend/`
+   - Build: `npm run build`, Output: `dist`
+   - Env: `VITE_API_URL=https://<railway-url>/api`
 
 ### VPS (Ubuntu/Debian)
 
