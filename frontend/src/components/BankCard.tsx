@@ -158,8 +158,8 @@ export default function BankCard({ bank, onViewBranches, index }: BankCardProps)
             location_on
           </span>
           <span className="text-[13px] text-emerald-800">
-            <span className="font-black text-emerald-700">{availableBranches}</span>
-            {' '}из {bank.branches.length} {pluralBranch(bank.branches.length)} в наличии
+            В <span className="font-black text-emerald-700">{availableBranches}</span>
+            {' '}{pluralBranch(availableBranches)} в наличии
           </span>
         </div>
       )}
@@ -180,8 +180,7 @@ export default function BankCard({ bank, onViewBranches, index }: BankCardProps)
 }
 
 function pluralBranch(n: number): string {
-  if (n % 100 >= 11 && n % 100 <= 19) return 'филиалов';
-  if (n % 10 === 1) return 'филиала';
-  if (n % 10 >= 2 && n % 10 <= 4) return 'филиалов';
-  return 'филиалов';
+  if (n % 100 >= 11 && n % 100 <= 19) return 'филиалах';
+  if (n % 10 === 1) return 'филиале';
+  return 'филиалах';
 }
