@@ -64,16 +64,20 @@ export default function PricesPage() {
   const { prices, loading: pricesLoading } = usePrices();
   const { history, loading: historyLoading } = usePriceHistory(selectedWeight);
 
-  const perGramHistory = history.map(h => ({
-    ...h,
-    priceUzs: Math.round(h.priceUzs / selectedWeight),
-  }));
+  // Build a fixed 7-day window ending today; days without scraped data become null
+  const todayUtc = new Date();
+  const chartData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(todayUtc);
+    d.setDate(d.getDate() - (6 - i));
+    const date = d.toISOString().split('T')[0];
+    const entry = history.find(h => h.date === date);
+    return { date, priceUzs: entry ? Math.round(entry.priceUzs / selectedWeight) : null };
+  });
 
+  const activePrices = chartData.filter(d => d.priceUzs !== null).map(d => d.priceUzs as number);
   const changePercent =
-    perGramHistory.length > 1
-      ? ((perGramHistory[perGramHistory.length - 1].priceUzs - perGramHistory[0].priceUzs) /
-          perGramHistory[0].priceUzs) *
-        100
+    activePrices.length > 1
+      ? ((activePrices[activePrices.length - 1] - activePrices[0]) / activePrices[0]) * 100
       : null;
 
   function handleCheckAvailability(weight: number) {
@@ -110,7 +114,7 @@ export default function PricesPage() {
 
           <WeightChips selected={selectedWeight} onChange={setSelectedWeight} />
 
-          <PriceChart history={perGramHistory} loading={historyLoading} hideTitle />
+          <PriceChart history={chartData} loading={historyLoading} hideTitle />
         </section>
 
         <section className="space-y-stack-md">
