@@ -92,9 +92,7 @@ export default function PriceChart({ history, loading, hideTitle, perGramDivisor
         {/* Price labels row — one per bar column */}
         <div className="flex gap-2 mb-3">
           {history.map((entry, i) => {
-            const labelPrice = entry.priceUzs !== null && perGramDivisor
-              ? Math.round(entry.priceUzs / perGramDivisor)
-              : entry.priceUzs;
+            const labelPrice = entry.priceUzs;
             return (
               <div key={i} className="flex-1 text-center">
                 {labelPrice !== null ? (
