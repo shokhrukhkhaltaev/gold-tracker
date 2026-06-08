@@ -73,7 +73,7 @@ function buildGrid($: cheerio.CheerioAPI, table: Element): string[][] {
       for (let c = 0; c < colspan; c++) {
         grid[ri][col + c] = text;
         if (rowspan > 1) {
-          pending.set(col + c, { value: text, rowsLeft: rowspan - 1 });
+          pending.set(col + c, { value: text, rowsLeft: rowspan });
         }
       }
       col += colspan;
