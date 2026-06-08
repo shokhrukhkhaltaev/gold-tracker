@@ -88,6 +88,34 @@ export function useBanks(city?: string, weight?: number): UseBanksReturn {
   return { banks, updatedAt, isMockData, loading, error, refetch: fetch_ };
 }
 
+interface UseFavoritesReturn {
+  favorites: Set<string>;
+  toggle: (bankName: string) => void;
+}
+
+export function useFavorites(): UseFavoritesReturn {
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('goldi_favorites');
+      return new Set(stored ? JSON.parse(stored) : []);
+    } catch {
+      return new Set();
+    }
+  });
+
+  function toggle(bankName: string) {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(bankName)) next.delete(bankName);
+      else next.add(bankName);
+      localStorage.setItem('goldi_favorites', JSON.stringify([...next]));
+      return next;
+    });
+  }
+
+  return { favorites, toggle };
+}
+
 interface UseCitiesReturn {
   cities: string[];
   loading: boolean;

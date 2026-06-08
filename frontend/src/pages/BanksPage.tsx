@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useBanks, useCities, usePrices, usePriceHistory } from '../hooks/useGoldData.js';
+import { useBanks, useCities, usePrices, usePriceHistory, useFavorites } from '../hooks/useGoldData.js';
 import { BankWithAvailability, PriceHistoryEntry } from '../types/index.js';
 import Header from '../components/Header.js';
 import PriceHero from '../components/PriceHero.js';
@@ -30,6 +30,7 @@ export default function BanksPage() {
     () => localStorage.getItem(CITY_KEY) ?? 'Ташкент',
   );
   const [selectedBank, setSelectedBank] = useState<BankWithAvailability | null>(null);
+  const { favorites, toggle: toggleFavorite } = useFavorites();
 
   function handleCityChange(city: string) {
     localStorage.setItem(CITY_KEY, city);
@@ -86,16 +87,59 @@ export default function BanksPage() {
               message={`Нет данных для ${selectedWeight}г ${selectedCity ? `в ${selectedCity}` : ''}`}
               icon="account_balance"
             />
-          ) : (
-            [...banks].sort((a, b) => b.totalQuantity - a.totalQuantity).map((bank, i) => (
-              <BankCard
-                key={bank.bankName}
-                bank={bank}
-                onViewBranches={setSelectedBank}
-                index={i}
-              />
-            ))
-          )}
+          ) : (() => {
+            const sorted = [...banks].sort((a, b) => b.totalQuantity - a.totalQuantity);
+            const favBanks = sorted.filter(b => favorites.has(b.bankName));
+            const restBanks = sorted.filter(b => !favorites.has(b.bankName));
+            return (
+              <>
+                {favBanks.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-1.5 px-1">
+                      <span
+                        className="material-symbols-outlined text-[16px] text-amber-400"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        star
+                      </span>
+                      <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                        Избранное
+                      </span>
+                    </div>
+                    {favBanks.map((bank, i) => (
+                      <BankCard
+                        key={bank.bankName}
+                        bank={bank}
+                        onViewBranches={setSelectedBank}
+                        index={i}
+                        isFavorite
+                        onToggleFavorite={toggleFavorite}
+                      />
+                    ))}
+                    {restBanks.length > 0 && (
+                      <div className="flex items-center gap-2 px-1 pt-1">
+                        <div className="flex-1 h-px bg-zinc-100" />
+                        <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
+                          Все банки
+                        </span>
+                        <div className="flex-1 h-px bg-zinc-100" />
+                      </div>
+                    )}
+                  </>
+                )}
+                {restBanks.map((bank, i) => (
+                  <BankCard
+                    key={bank.bankName}
+                    bank={bank}
+                    onViewBranches={setSelectedBank}
+                    index={favBanks.length + i}
+                    isFavorite={false}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                ))}
+              </>
+            );
+          })()}
         </section>
 
         {!banksLoading && (

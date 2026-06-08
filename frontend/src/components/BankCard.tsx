@@ -4,6 +4,8 @@ interface BankCardProps {
   bank: BankWithAvailability;
   onViewBranches: (bank: BankWithAvailability) => void;
   index: number;
+  isFavorite?: boolean;
+  onToggleFavorite?: (bankName: string) => void;
 }
 
 interface BankInfo {
@@ -108,7 +110,7 @@ export function resolveBankInfo(bank: BankWithAvailability): BankInfo | null {
   return null;
 }
 
-export default function BankCard({ bank, onViewBranches, index }: BankCardProps) {
+export default function BankCard({ bank, onViewBranches, index, isFavorite, onToggleFavorite }: BankCardProps) {
   const info = resolveBankInfo(bank);
   const displayName = info?.name ?? bank.bankName;
   const availableBranches = bank.branches.filter(b => b.available).length;
@@ -138,7 +140,22 @@ export default function BankCard({ bank, onViewBranches, index }: BankCardProps)
           <h4 className="text-[15px] font-bold text-on-surface leading-snug">{displayName}</h4>
         </div>
 
-        <div className="shrink-0 ml-3 text-right">
+        {onToggleFavorite && (
+          <button
+            onClick={e => { e.stopPropagation(); onToggleFavorite(bank.bankName); }}
+            className="shrink-0 p-1 -mt-0.5 -mr-1 rounded-lg hover:bg-zinc-50 active:scale-90 transition-transform"
+            aria-label={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
+          >
+            <span
+              className={`material-symbols-outlined text-[22px] ${isFavorite ? 'text-amber-400' : 'text-zinc-300'}`}
+              style={isFavorite ? { fontVariationSettings: "'FILL' 1" } : {}}
+            >
+              star
+            </span>
+          </button>
+        )}
+
+        <div className="shrink-0 ml-1 text-right">
           {bank.hasAvailability ? (
             <>
               <span className="block text-[22px] font-black text-primary leading-tight">{bank.totalQuantity} шт.</span>
