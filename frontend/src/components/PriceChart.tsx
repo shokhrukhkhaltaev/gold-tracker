@@ -51,6 +51,7 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
   const range = maxPrice - minPrice || 1;
 
   const getBarHeight = (price: number) => {
+    if (activePrices.length === 1) return '80%';
     const pct = ((price - minPrice) / range) * 55 + 25; // 25%–80%
     return `${pct}%`;
   };
