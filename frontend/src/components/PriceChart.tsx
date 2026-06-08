@@ -3,6 +3,7 @@ import { PriceHistoryEntry } from '../types/index.js';
 interface PriceChartProps {
   history: PriceHistoryEntry[];
   loading: boolean;
+  hideTitle?: boolean;
 }
 
 function formatPrice(n: number): string {
@@ -14,7 +15,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
-export default function PriceChart({ history, loading }: PriceChartProps) {
+export default function PriceChart({ history, loading, hideTitle }: PriceChartProps) {
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-card p-6 gold-mesh aspect-video animate-pulse flex items-end justify-between gap-1">
@@ -44,18 +45,30 @@ export default function PriceChart({ history, loading }: PriceChartProps) {
 
   return (
     <div>
-      <div className="flex justify-between items-end mb-4">
-        <div>
-          <h2 className="text-headline-md text-on-surface">Динамика цен</h2>
-          <p className="text-label-sm text-secondary">Последние {history.length} дней</p>
+      {!hideTitle && (
+        <div className="flex justify-between items-end mb-4">
+          <div>
+            <h2 className="text-headline-md text-on-surface">Динамика цен</h2>
+            <p className="text-label-sm text-secondary">Последние {history.length} дней</p>
+          </div>
+          <div className="text-right">
+            <span className={`block text-label-bold font-bold ${isPositive ? 'text-primary' : 'text-error'}`}>
+              Макс: {formatPrice(maxPrice)}
+            </span>
+            <span className="block text-label-sm text-secondary">Мин: {formatPrice(minPrice)}</span>
+          </div>
         </div>
-        <div className="text-right">
-          <span className={`block text-label-bold font-bold ${isPositive ? 'text-primary' : 'text-error'}`}>
-            Макс: {formatPrice(maxPrice)}
-          </span>
-          <span className="block text-label-sm text-secondary">Мин: {formatPrice(minPrice)}</span>
+      )}
+      {hideTitle && (
+        <div className="flex justify-end mb-4">
+          <div className="text-right">
+            <span className={`block text-label-bold font-bold ${isPositive ? 'text-primary' : 'text-error'}`}>
+              Макс: {formatPrice(maxPrice)}
+            </span>
+            <span className="block text-label-sm text-secondary">Мин: {formatPrice(minPrice)}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-card p-6 gold-mesh overflow-hidden">
         {/* Tooltip area */}

@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePrices } from '../hooks/useGoldData.js';
+import { usePrices, usePriceHistory } from '../hooks/useGoldData.js';
 import { GoldPrice } from '../types/index.js';
 import Header from '../components/Header.js';
 import { PriceCardSkeleton } from '../components/LoadingSkeleton.js';
+import PriceChart from '../components/PriceChart.js';
+import WeightChips from '../components/WeightChips.js';
 
 function formatPrice(n: number): string {
   return n.toLocaleString('ru-RU');
@@ -57,7 +60,21 @@ function GoldCard({ price, onCheckAvailability, colSpan, index }: GoldCardProps)
 
 export default function PricesPage() {
   const navigate = useNavigate();
+  const [selectedWeight, setSelectedWeight] = useState(5);
   const { prices, loading: pricesLoading } = usePrices();
+  const { history, loading: historyLoading } = usePriceHistory(selectedWeight);
+
+  const perGramHistory = history.map(h => ({
+    ...h,
+    priceUzs: Math.round(h.priceUzs / selectedWeight),
+  }));
+
+  const changePercent =
+    perGramHistory.length > 1
+      ? ((perGramHistory[perGramHistory.length - 1].priceUzs - perGramHistory[0].priceUzs) /
+          perGramHistory[0].priceUzs) *
+        100
+      : null;
 
   function handleCheckAvailability(weight: number) {
     navigate(`/?weight=${weight}`);
@@ -70,7 +87,33 @@ export default function PricesPage() {
       <Header prices={prices} loading={pricesLoading} />
 
       <main className="pt-[72px] pb-[100px] px-container-margin max-w-2xl mx-auto space-y-stack-lg animate-fade-in">
-        <section className="mt-stack-lg space-y-stack-md">
+
+        <section className="mt-stack-lg space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <h3 className="text-headline-md">Динамика цен</h3>
+              <p className="text-label-sm text-secondary">Цена за 1 грамм золота</p>
+            </div>
+            {changePercent !== null && (
+              <span
+                className={`text-sm font-bold px-3 py-1.5 rounded-full ${
+                  changePercent >= 0
+                    ? 'bg-emerald-50 text-emerald-600'
+                    : 'bg-red-50 text-red-600'
+                }`}
+              >
+                {changePercent >= 0 ? '+' : ''}
+                {changePercent.toFixed(1)}%
+              </span>
+            )}
+          </div>
+
+          <WeightChips selected={selectedWeight} onChange={setSelectedWeight} />
+
+          <PriceChart history={perGramHistory} loading={historyLoading} hideTitle />
+        </section>
+
+        <section className="space-y-stack-md">
           <h3 className="text-headline-md px-1">Слитки</h3>
 
           {pricesLoading ? (
