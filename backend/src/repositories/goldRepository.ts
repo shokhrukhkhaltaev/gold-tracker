@@ -188,6 +188,22 @@ export function persistScrapedData(data: ScrapedGoldData): void {
   }
 }
 
+export function addSubscriber(chatId: string): void {
+  db.prepare(`
+    INSERT OR IGNORE INTO telegram_subscribers (chat_id, subscribed_at)
+    VALUES (?, ?)
+  `).run([chatId, new Date().toISOString()]);
+}
+
+export function removeSubscriber(chatId: string): void {
+  db.prepare('DELETE FROM telegram_subscribers WHERE chat_id = ?').run(chatId);
+}
+
+export function getSubscribers(): string[] {
+  const rows = db.prepare('SELECT chat_id FROM telegram_subscribers').all() as { chat_id: string }[];
+  return rows.map(r => r.chat_id);
+}
+
 export function hasPriceHistory(weightGrams: number): boolean {
   const row = db.prepare('SELECT COUNT(*) as cnt FROM price_history WHERE weight_grams = ?').get(weightGrams) as { cnt: number };
   return row.cnt > 0;

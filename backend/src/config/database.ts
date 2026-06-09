@@ -57,6 +57,12 @@ export function initDatabase(): void {
       date TEXT NOT NULL,
       UNIQUE(weight_grams, date)
     );
+
+    CREATE TABLE IF NOT EXISTS telegram_subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chat_id TEXT UNIQUE NOT NULL,
+      subscribed_at TEXT NOT NULL
+    );
   `);
 }
 

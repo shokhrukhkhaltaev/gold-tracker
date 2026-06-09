@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { getPrices, getBanksWithAvailability, getCities } from './goldService.js';
+import { addSubscriber, removeSubscriber, getSubscribers } from '../repositories/goldRepository.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT_ID   = process.env.TELEGRAM_CHAT_ID;
 
 // Saved city preference (in-memory, survives runtime, resets on redeploy → defaults to Ташкент)
 let savedCity: string = 'Ташкент';
@@ -43,13 +43,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 
 // ─── Daily prices (automatic, 11:00 Tashkent) ────────────────────────────
 
-export async function sendDailyPrices(chatId?: string | number): Promise<void> {
-  const target = chatId ?? CHAT_ID;
-  if (!BOT_TOKEN || !target) {
-    console.warn('[Telegram] Credentials not set, skipping.');
-    return;
-  }
-
+async function sendPricesToChat(chatId: string | number): Promise<boolean> {
   const { prices } = getPrices();
   const weightOrder = [5, 10, 20, 50, 100];
   const sorted = [...prices].sort(
@@ -70,19 +64,58 @@ export async function sendDailyPrices(chatId?: string | number): Promise<void> {
     `🔗 [Открыть Goldi](https://frontend-flame-theta-76.vercel.app)`,
   ].join('\n');
 
-  await tg('sendMessage', {
-    chat_id: target,
-    text,
-    parse_mode: 'Markdown',
-    disable_web_page_preview: true,
-    reply_markup: {
-      inline_keyboard: [[
-        { text: '🏦 Проверить наличие', callback_data: 'check_availability' },
-      ]],
-    },
-  });
+  if (!BOT_TOKEN) return false;
+  try {
+    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      parse_mode: 'Markdown',
+      disable_web_page_preview: true,
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🏦 Проверить наличие', callback_data: 'check_availability' },
+        ]],
+      },
+    });
+    return true;
+  } catch (err: any) {
+    const code = err?.response?.data?.error_code;
+    // Bot was blocked or user deleted account — remove from subscribers
+    if (code === 403 || code === 400) {
+      removeSubscriber(String(chatId));
+      console.log(`[Telegram] Removed unsubscribed chat: ${chatId}`);
+    } else {
+      console.error(`[Telegram] sendMessage error for ${chatId}:`, err?.response?.data ?? err.message);
+    }
+    return false;
+  }
+}
 
-  console.log('[Telegram] Daily prices sent.');
+export async function sendDailyPrices(chatId?: string | number): Promise<void> {
+  if (!BOT_TOKEN) {
+    console.warn('[Telegram] BOT_TOKEN not set, skipping.');
+    return;
+  }
+
+  // If specific chat requested (e.g. /prices command) — send only to them
+  if (chatId) {
+    await sendPricesToChat(chatId);
+    return;
+  }
+
+  // Broadcast to all subscribers
+  const subscribers = getSubscribers();
+  if (subscribers.length === 0) {
+    console.warn('[Telegram] No subscribers yet, skipping broadcast.');
+    return;
+  }
+
+  let sent = 0;
+  for (const sub of subscribers) {
+    const ok = await sendPricesToChat(sub);
+    if (ok) sent++;
+  }
+  console.log(`[Telegram] Daily broadcast: ${sent}/${subscribers.length} delivered.`);
 }
 
 // ─── City selector keyboard ───────────────────────────────────────────────
@@ -143,12 +176,13 @@ export async function handleUpdate(update: any): Promise<void> {
     const text: string = msg.text?.trim() ?? '';
 
     if (text === '/start') {
+      addSubscriber(String(chatId));
       await tg('sendMessage', {
         chat_id: chatId,
         text: [
           `👋 Привет! Я *Goldi* — бот для цен на золото в Узбекистане.`,
           ``,
-          `📅 Каждый день в *11:00* по Ташкенту присылаю актуальные цены ЦБУ.`,
+          `✅ Вы подписаны на ежедневную рассылку в *11:00* по Ташкенту.`,
           ``,
           `Команды:`,
           `/prices — текущие цены`,
