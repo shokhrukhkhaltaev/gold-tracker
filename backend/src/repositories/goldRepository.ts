@@ -166,7 +166,8 @@ export function getAvailabilityUpdatedAt(): string {
 }
 
 export function persistScrapedData(data: ScrapedGoldData): void {
-  const today = new Date().toISOString().split('T')[0];
+  // Use Tashkent date (UTC+5) so the 04:00 Tashkent cron run records the correct local date
+  const today = new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   db.exec('BEGIN');
   try {
