@@ -10,3 +10,7 @@ restartPolicyMaxRetries = 10
 type = "http"
 path = "/health"
 timeout = 30
+
+[[volumes]]
+mountPath = "/app/data"
+name = "gold-data"
