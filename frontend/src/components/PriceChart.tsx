@@ -50,10 +50,15 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
   const maxPrice = activePrices.length > 0 ? Math.max(...activePrices) : 0;
   const range = maxPrice - minPrice || 1;
 
+  // Minimum display range = 3% of max price so tiny fluctuations don't look colossal
+  const minDisplayRange = maxPrice * 0.03;
+  const displayRange = Math.max(range, minDisplayRange);
+  const displayMin = maxPrice - displayRange;
+
   const getBarHeight = (price: number) => {
     if (activePrices.length === 1) return '80%';
-    const pct = ((price - minPrice) / range) * 55 + 25; // 25%–80%
-    return `${pct}%`;
+    const pct = ((price - displayMin) / displayRange) * 55 + 25;
+    return `${Math.min(80, Math.max(25, pct))}%`;
   };
 
   const lastActiveIndex = history.reduce((acc, h, i) => (h.priceUzs !== null ? i : acc), -1);
@@ -145,13 +150,21 @@ export default function PriceChart({ history, loading, hideTitle }: PriceChartPr
           })}
         </div>
 
-        {/* Date labels */}
-        <div className="flex justify-between mt-2">
-          <span className="text-[10px] text-secondary">{formatDate(history[0].date)}</span>
-          {history.length > 4 && (
-            <span className="text-[10px] text-secondary">{formatDate(history[Math.floor(history.length / 2)].date)}</span>
-          )}
-          <span className="text-[10px] text-secondary">{formatDate(history[history.length - 1].date)}</span>
+        {/* Date labels — one under each bar */}
+        <div className="flex gap-2 mt-2">
+          {history.map((entry, i) => {
+            const d = new Date(entry.date + 'T00:00:00Z');
+            const isFirst = i === 0;
+            const isLast = i === history.length - 1;
+            const label = (isFirst || isLast)
+              ? d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+              : String(d.getUTCDate());
+            return (
+              <div key={i} className="flex-1 text-center">
+                <span className="text-[9px] text-secondary leading-none">{label}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
