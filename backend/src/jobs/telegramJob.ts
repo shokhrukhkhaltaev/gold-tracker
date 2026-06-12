@@ -3,8 +3,8 @@ import { sendDailyPrices } from '../services/telegramService.js';
 
 // Every day at 11:00 Tashkent time
 export function startTelegramJob(): void {
-  // 11:00 Tashkent (GMT+5) = 06:00 UTC
-  cron.schedule('0 6 * * *', async () => {
+  // 11:10 Tashkent (GMT+5) = 06:10 UTC — 10 min after scrape finishes
+  cron.schedule('10 6 * * *', async () => {
     console.log('[TelegramJob] Sending daily notification...');
     try {
       await sendDailyPrices();
@@ -13,5 +13,5 @@ export function startTelegramJob(): void {
     }
   });
 
-  console.log('[TelegramJob] Scheduled: 06:00 UTC (11:00 Tashkent) every day');
+  console.log('[TelegramJob] Scheduled: 06:10 UTC (11:10 Tashkent) every day');
 }

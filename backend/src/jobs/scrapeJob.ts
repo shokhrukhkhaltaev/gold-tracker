@@ -1,9 +1,8 @@
 import cron from 'node-cron';
 import { refreshData } from '../services/goldService.js';
 
-// 10:00 and 17:00 Tashkent (GMT+5) = 05:00 and 12:00 UTC
-// CBU updates their prices around 09:35 Tashkent, so 10:00 ensures we get today's data
-const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 5,12 * * *';
+// 11:00 and 17:00 Tashkent (GMT+5) = 06:00 and 12:00 UTC
+const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 6,12 * * *';
 
 export function startScrapeJob(): void {
   cron.schedule(CRON_SCHEDULE, async () => {
@@ -16,7 +15,7 @@ export function startScrapeJob(): void {
     }
   });
 
-  console.log(`[CronJob] Scrape job scheduled: ${CRON_SCHEDULE} UTC (10:00 & 17:00 Tashkent)`);
+  console.log(`[CronJob] Scrape job scheduled: ${CRON_SCHEDULE} UTC (11:00 & 17:00 Tashkent)`);
 }
 
 // Allow running as standalone script
