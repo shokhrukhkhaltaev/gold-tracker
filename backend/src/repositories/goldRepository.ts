@@ -1,14 +1,13 @@
 import pool from '../config/database.js';
 import {
   GoldPrice,
-  GoldAvailability,
   PriceHistoryEntry,
   BankWithAvailability,
   ScrapedGoldData,
 } from '../types/index.js';
 
 export async function upsertBank(name: string, shortName: string): Promise<number> {
-  const res = await pool.query<{ id: number }>(
+  const res = await pool.query(
     `INSERT INTO banks (name, short_name) VALUES ($1, $2)
      ON CONFLICT (name) DO UPDATE SET short_name = EXCLUDED.short_name
      RETURNING id`,
@@ -18,7 +17,7 @@ export async function upsertBank(name: string, shortName: string): Promise<numbe
 }
 
 export async function upsertBranch(bankId: number, city: string, address: string, phone: string): Promise<number> {
-  const res = await pool.query<{ id: number }>(
+  const res = await pool.query(
     `INSERT INTO branches (bank_id, city, address, phone) VALUES ($1, $2, $3, $4)
      ON CONFLICT (bank_id, city, address) DO UPDATE SET phone = EXCLUDED.phone
      RETURNING id`,
@@ -28,23 +27,19 @@ export async function upsertBranch(bankId: number, city: string, address: string
 }
 
 export async function upsertGoldPrice(weightGrams: number, priceUzs: number): Promise<void> {
-  const now = new Date().toISOString();
   await pool.query(
     `INSERT INTO gold_prices (weight_grams, price_uzs, updated_at) VALUES ($1, $2, $3)
      ON CONFLICT (weight_grams) DO UPDATE SET price_uzs = EXCLUDED.price_uzs, updated_at = EXCLUDED.updated_at`,
-    [weightGrams, priceUzs, now],
+    [weightGrams, priceUzs, new Date().toISOString()],
   );
 }
 
 export async function upsertAvailability(branchId: number, weightGrams: number, quantity: number, priceUzs: number): Promise<void> {
-  const now = new Date().toISOString();
   await pool.query(
     `INSERT INTO gold_availability (branch_id, weight_grams, quantity, price_uzs, updated_at) VALUES ($1, $2, $3, $4, $5)
      ON CONFLICT (branch_id, weight_grams) DO UPDATE SET
-       quantity = EXCLUDED.quantity,
-       price_uzs = EXCLUDED.price_uzs,
-       updated_at = EXCLUDED.updated_at`,
-    [branchId, weightGrams, quantity, priceUzs, now],
+       quantity = EXCLUDED.quantity, price_uzs = EXCLUDED.price_uzs, updated_at = EXCLUDED.updated_at`,
+    [branchId, weightGrams, quantity, priceUzs, new Date().toISOString()],
   );
 }
 
@@ -57,33 +52,31 @@ export async function recordPriceHistory(weightGrams: number, priceUzs: number, 
 }
 
 export async function getAllPrices(): Promise<GoldPrice[]> {
-  const res = await pool.query<{ weightgrams: number; priceuzs: string; updatedat: string }>(
-    `SELECT weight_grams AS "weightGrams", price_uzs AS "priceUzs", updated_at AS "updatedAt"
-     FROM gold_prices ORDER BY weight_grams ASC`,
+  const res = await pool.query(
+    `SELECT weight_grams, price_uzs, updated_at FROM gold_prices ORDER BY weight_grams ASC`,
   );
   return res.rows.map(r => ({
-    weightGrams: r.weightgrams,
-    priceUzs: Number(r.priceuzs),
-    updatedAt: r.updatedat,
+    weightGrams: Number(r.weight_grams),
+    priceUzs: Number(r.price_uzs),
+    updatedAt: r.updated_at,
   }));
 }
 
 export async function getPriceHistory(weightGrams: number, days = 15): Promise<PriceHistoryEntry[]> {
-  const res = await pool.query<{ weightgrams: number; priceuzs: string; date: string }>(
-    `SELECT weight_grams AS "weightGrams", price_uzs AS "priceUzs", date
-     FROM price_history WHERE weight_grams = $1
-     ORDER BY date DESC LIMIT $2`,
+  const res = await pool.query(
+    `SELECT weight_grams, price_uzs, date FROM price_history
+     WHERE weight_grams = $1 ORDER BY date DESC LIMIT $2`,
     [weightGrams, days],
   );
   return res.rows.reverse().map(r => ({
-    weightGrams: r.weightgrams,
-    priceUzs: Number(r.priceuzs),
+    weightGrams: Number(r.weight_grams),
+    priceUzs: Number(r.price_uzs),
     date: r.date,
   }));
 }
 
 export async function getAllCities(): Promise<string[]> {
-  const res = await pool.query<{ city: string }>(
+  const res = await pool.query(
     `SELECT DISTINCT city FROM branches
      WHERE city NOT LIKE '%гр%' AND city NOT LIKE '%г.%' AND length(city) > 3
      ORDER BY city ASC`,
@@ -94,47 +87,42 @@ export async function getAllCities(): Promise<string[]> {
 export async function getAvailabilityGrouped(city?: string, weightGrams?: number): Promise<BankWithAvailability[]> {
   const params: (string | number)[] = [];
   let where = 'WHERE 1=1';
-  if (city) { where += ` AND br.city = $${params.length + 1}`; params.push(city); }
-  if (weightGrams) { where += ` AND ga.weight_grams = $${params.length + 1}`; params.push(weightGrams); }
+  if (city)        { where += ` AND br.city = $${params.length + 1}`;          params.push(city); }
+  if (weightGrams) { where += ` AND ga.weight_grams = $${params.length + 1}`;  params.push(weightGrams); }
 
-  const res = await pool.query<{
-    bankname: string; bankshortname: string; city: string;
-    branchid: number; address: string; phone: string;
-    weightgrams: number; quantity: number; priceuzs: string; updatedat: string;
-  }>(
-    `SELECT b.name AS "bankName", b.short_name AS "bankShortName",
-            br.city, br.id AS "branchId", br.address, br.phone,
-            ga.weight_grams AS "weightGrams", ga.quantity,
-            ga.price_uzs AS "priceUzs", ga.updated_at AS "updatedAt"
+  const res = await pool.query(
+    `SELECT b.name as bankname, b.short_name as bankshortname,
+            br.city, br.id as branchid, br.address, br.phone,
+            ga.weight_grams as weightgrams, ga.quantity,
+            ga.price_uzs as priceuzs, ga.updated_at as updatedat
      FROM gold_availability ga
      JOIN branches br ON ga.branch_id = br.id
      JOIN banks b ON br.bank_id = b.id
-     ${where}
-     ORDER BY b.name, br.city, br.id`,
+     ${where} ORDER BY b.name, br.city, br.id`,
     params,
   );
 
   const groupMap = new Map<string, BankWithAvailability>();
-  for (const row of res.rows) {
-    if (!groupMap.has(row.bankname)) {
-      groupMap.set(row.bankname, {
-        bankName: row.bankname,
-        bankShortName: row.bankshortname,
+  for (const r of res.rows) {
+    if (!groupMap.has(r.bankname)) {
+      groupMap.set(r.bankname, {
+        bankName: r.bankname,
+        bankShortName: r.bankshortname,
         totalQuantity: 0,
         hasAvailability: false,
         branches: [],
       });
     }
-    const group = groupMap.get(row.bankname)!;
-    let branch = group.branches.find(b => b.branchId === row.branchid);
+    const group = groupMap.get(r.bankname)!;
+    let branch = group.branches.find(b => b.branchId === r.branchid);
     if (!branch) {
-      branch = { branchId: row.branchid, city: row.city, address: row.address, phone: row.phone, quantity: 0, available: false };
+      branch = { branchId: r.branchid, city: r.city, address: r.address, phone: r.phone, quantity: 0, available: false };
       group.branches.push(branch);
     }
-    branch.quantity += row.quantity;
-    branch.available = branch.available || row.quantity > 0;
-    group.totalQuantity += row.quantity;
-    group.hasAvailability = group.hasAvailability || row.quantity > 0;
+    branch.quantity += Number(r.quantity);
+    branch.available = branch.available || Number(r.quantity) > 0;
+    group.totalQuantity += Number(r.quantity);
+    group.hasAvailability = group.hasAvailability || Number(r.quantity) > 0;
   }
 
   return Array.from(groupMap.values())
@@ -143,7 +131,7 @@ export async function getAvailabilityGrouped(city?: string, weightGrams?: number
 }
 
 export async function getAvailabilityUpdatedAt(): Promise<string> {
-  const res = await pool.query<{ ts: string | null }>('SELECT MAX(updated_at) AS ts FROM gold_availability');
+  const res = await pool.query('SELECT MAX(updated_at) as ts FROM gold_availability');
   return res.rows[0]?.ts ?? new Date().toISOString();
 }
 
@@ -152,9 +140,9 @@ export async function persistScrapedData(data: ScrapedGoldData): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const now = new Date().toISOString();
 
     for (const price of data.prices) {
-      const now = new Date().toISOString();
       await client.query(
         `INSERT INTO gold_prices (weight_grams, price_uzs, updated_at) VALUES ($1, $2, $3)
          ON CONFLICT (weight_grams) DO UPDATE SET price_uzs = EXCLUDED.price_uzs, updated_at = EXCLUDED.updated_at`,
@@ -168,21 +156,20 @@ export async function persistScrapedData(data: ScrapedGoldData): Promise<void> {
     }
 
     for (const item of data.availability) {
-      const bankRes = await client.query<{ id: number }>(
+      const bankRes = await client.query(
         `INSERT INTO banks (name, short_name) VALUES ($1, $2)
          ON CONFLICT (name) DO UPDATE SET short_name = EXCLUDED.short_name RETURNING id`,
         [item.bankName, item.bankShortName],
       );
       const bankId = bankRes.rows[0].id;
 
-      const branchRes = await client.query<{ id: number }>(
+      const branchRes = await client.query(
         `INSERT INTO branches (bank_id, city, address, phone) VALUES ($1, $2, $3, $4)
          ON CONFLICT (bank_id, city, address) DO UPDATE SET phone = EXCLUDED.phone RETURNING id`,
         [bankId, item.city, item.address, item.phone],
       );
       const branchId = branchRes.rows[0].id;
 
-      const now = new Date().toISOString();
       await client.query(
         `INSERT INTO gold_availability (branch_id, weight_grams, quantity, price_uzs, updated_at) VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (branch_id, weight_grams) DO UPDATE SET
@@ -201,8 +188,8 @@ export async function persistScrapedData(data: ScrapedGoldData): Promise<void> {
 }
 
 export async function hasPriceHistory(weightGrams: number): Promise<boolean> {
-  const res = await pool.query<{ cnt: string }>(
-    'SELECT COUNT(*) AS cnt FROM price_history WHERE weight_grams = $1',
+  const res = await pool.query(
+    'SELECT COUNT(*) as cnt FROM price_history WHERE weight_grams = $1',
     [weightGrams],
   );
   return Number(res.rows[0].cnt) > 0;
@@ -214,8 +201,7 @@ export async function seedPriceHistory(weightGrams: number, currentPrice: number
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
-    const variation = 1 + (Math.random() * 0.04 - 0.02);
-    const price = Math.round(currentPrice * variation);
+    const price = Math.round(currentPrice * (1 + (Math.random() * 0.04 - 0.02)));
     await recordPriceHistory(weightGrams, price, dateStr);
   }
 }
@@ -232,6 +218,6 @@ export async function removeSubscriber(chatId: string): Promise<void> {
 }
 
 export async function getSubscribers(): Promise<string[]> {
-  const res = await pool.query<{ chat_id: string }>('SELECT chat_id FROM telegram_subscribers');
+  const res = await pool.query('SELECT chat_id FROM telegram_subscribers');
   return res.rows.map(r => r.chat_id);
 }
