@@ -104,10 +104,18 @@ export async function sendDailyPrices(chatId?: string | number): Promise<void> {
   }
 
   // Broadcast to all subscribers
-  const subscribers = getSubscribers();
+  let subscribers = getSubscribers();
+
+  // Fallback: if DB was wiped and no subscribers, use TELEGRAM_CHAT_ID env var
   if (subscribers.length === 0) {
-    console.warn('[Telegram] No subscribers yet, skipping broadcast.');
-    return;
+    const fallback = process.env.TELEGRAM_CHAT_ID;
+    if (fallback) {
+      console.warn('[Telegram] No subscribers in DB, using TELEGRAM_CHAT_ID fallback.');
+      subscribers = [fallback];
+    } else {
+      console.warn('[Telegram] No subscribers and no TELEGRAM_CHAT_ID, skipping broadcast.');
+      return;
+    }
   }
 
   let sent = 0;
