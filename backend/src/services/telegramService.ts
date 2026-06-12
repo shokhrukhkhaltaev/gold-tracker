@@ -44,7 +44,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 // ─── Daily prices (automatic, 11:00 Tashkent) ────────────────────────────
 
 async function sendPricesToChat(chatId: string | number): Promise<boolean> {
-  const { prices } = getPrices();
+  const { prices } = await getPrices();
   const weightOrder = [5, 10, 20, 50, 100];
   const sorted = [...prices].sort(
     (a, b) => weightOrder.indexOf(a.weightGrams) - weightOrder.indexOf(b.weightGrams),
@@ -97,16 +97,13 @@ export async function sendDailyPrices(chatId?: string | number): Promise<void> {
     return;
   }
 
-  // If specific chat requested (e.g. /prices command) — send only to them
   if (chatId) {
     await sendPricesToChat(chatId);
     return;
   }
 
-  // Broadcast to all subscribers
-  let subscribers = getSubscribers();
+  let subscribers = await getSubscribers();
 
-  // Fallback: if DB was wiped and no subscribers, use TELEGRAM_CHAT_ID env var
   if (subscribers.length === 0) {
     const fallback = process.env.TELEGRAM_CHAT_ID;
     if (fallback) {
@@ -129,7 +126,7 @@ export async function sendDailyPrices(chatId?: string | number): Promise<void> {
 // ─── City selector keyboard ───────────────────────────────────────────────
 
 async function sendCitySelector(chatId: number | string): Promise<void> {
-  const cities = getCities();
+  const cities = await getCities();
   const rows = chunkArray(cities, 3).map(row =>
     row.map(city => ({ text: city, callback_data: `city:${city}` })),
   );
@@ -144,7 +141,7 @@ async function sendCitySelector(chatId: number | string): Promise<void> {
 // ─── Availability for saved city ──────────────────────────────────────────
 
 async function sendAvailability(chatId: number | string, city: string): Promise<void> {
-  const { banks } = getBanksWithAvailability(city);
+  const { banks } = await getBanksWithAvailability(city);
   const available = banks
     .filter(b => b.hasAvailability)
     .sort((a, b) => b.totalQuantity - a.totalQuantity);
@@ -184,7 +181,7 @@ export async function handleUpdate(update: any): Promise<void> {
     const text: string = msg.text?.trim() ?? '';
 
     if (text === '/start') {
-      addSubscriber(String(chatId));
+      await addSubscriber(String(chatId));
       await tg('sendMessage', {
         chat_id: chatId,
         text: [

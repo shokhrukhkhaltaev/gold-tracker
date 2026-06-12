@@ -12,12 +12,11 @@ export async function refreshData(): Promise<void> {
   isMockData = mock;
   lastScrapeError = error ?? null;
 
-  repo.persistScrapedData(data);
+  await repo.persistScrapedData(data);
 
-  // Seed history for any weight that has no history yet
   for (const price of data.prices) {
-    if (!repo.hasPriceHistory(price.weightGrams)) {
-      repo.seedPriceHistory(price.weightGrams, price.priceUzs);
+    if (!(await repo.hasPriceHistory(price.weightGrams))) {
+      await repo.seedPriceHistory(price.weightGrams, price.priceUzs);
     }
   }
 
@@ -25,27 +24,27 @@ export async function refreshData(): Promise<void> {
   console.log(`[GoldService] Data refresh complete. Source: ${mock ? 'mock' : 'CBU'}`);
 }
 
-export function getPrices(): { prices: GoldPrice[]; updatedAt: string; isMockData: boolean } {
-  const prices = repo.getAllPrices();
+export async function getPrices(): Promise<{ prices: GoldPrice[]; updatedAt: string; isMockData: boolean }> {
+  const prices = await repo.getAllPrices();
   const updatedAt = prices[0]?.updatedAt ?? new Date().toISOString();
   return { prices, updatedAt, isMockData };
 }
 
-export function getPriceHistory(weightGrams: number): PriceHistoryEntry[] {
+export async function getPriceHistory(weightGrams: number): Promise<PriceHistoryEntry[]> {
   return repo.getPriceHistory(weightGrams, 15);
 }
 
-export function getCities(): string[] {
+export async function getCities(): Promise<string[]> {
   return repo.getAllCities();
 }
 
-export function getBanksWithAvailability(city?: string, weightGrams?: number): {
+export async function getBanksWithAvailability(city?: string, weightGrams?: number): Promise<{
   banks: BankWithAvailability[];
   updatedAt: string;
   isMockData: boolean;
-} {
-  const banks = repo.getAvailabilityGrouped(city, weightGrams);
-  const updatedAt = repo.getAvailabilityUpdatedAt();
+}> {
+  const banks = await repo.getAvailabilityGrouped(city, weightGrams);
+  const updatedAt = await repo.getAvailabilityUpdatedAt();
   return { banks, updatedAt, isMockData };
 }
 

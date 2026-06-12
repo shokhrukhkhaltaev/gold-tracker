@@ -1,69 +1,62 @@
-import { Database } from 'node-sqlite3-wasm';
-import path from 'path';
-import fs from 'fs';
+import { Pool } from 'pg';
 
-const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+});
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-const db = new Database(path.join(DATA_DIR, 'gold.db'));
-
-db.exec('PRAGMA busy_timeout = 5000');
-db.exec('PRAGMA foreign_keys = ON');
-
-export function initDatabase(): void {
-  db.exec(`
+export async function initDatabase(): Promise<void> {
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS banks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       short_name TEXT NOT NULL,
       UNIQUE(name)
     );
 
     CREATE TABLE IF NOT EXISTS branches (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       bank_id INTEGER NOT NULL,
       city TEXT NOT NULL,
       address TEXT NOT NULL DEFAULT '',
       phone TEXT NOT NULL DEFAULT '',
+      UNIQUE(bank_id, city, address),
       FOREIGN KEY (bank_id) REFERENCES banks(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS gold_prices (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       weight_grams INTEGER NOT NULL,
-      price_uzs INTEGER NOT NULL,
+      price_uzs BIGINT NOT NULL,
       updated_at TEXT NOT NULL,
       UNIQUE(weight_grams)
     );
 
     CREATE TABLE IF NOT EXISTS gold_availability (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       branch_id INTEGER NOT NULL,
       weight_grams INTEGER NOT NULL,
       quantity INTEGER NOT NULL DEFAULT 0,
-      price_uzs INTEGER NOT NULL DEFAULT 0,
+      price_uzs BIGINT NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL,
-      FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE,
-      UNIQUE(branch_id, weight_grams)
+      UNIQUE(branch_id, weight_grams),
+      FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS price_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       weight_grams INTEGER NOT NULL,
-      price_uzs INTEGER NOT NULL,
+      price_uzs BIGINT NOT NULL,
       date TEXT NOT NULL,
       UNIQUE(weight_grams, date)
     );
 
     CREATE TABLE IF NOT EXISTS telegram_subscribers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       chat_id TEXT UNIQUE NOT NULL,
       subscribed_at TEXT NOT NULL
     );
   `);
 }
 
-export default db;
+export default pool;
