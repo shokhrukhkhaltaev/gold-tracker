@@ -9,8 +9,13 @@ import { registerWebhook } from './services/telegramService.js';
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
 async function main() {
+  if (!process.env.DATABASE_URL) {
+    console.error('[Server] FATAL: DATABASE_URL is not set. Add a PostgreSQL service in Railway.');
+    process.exit(1);
+  }
+
   console.log('[Server] Initializing database...');
-  initDatabase();
+  await initDatabase();
 
   console.log('[Server] Loading initial gold data...');
   await refreshData();
